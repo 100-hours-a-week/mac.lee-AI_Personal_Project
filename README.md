@@ -17,105 +17,14 @@
 ---
 
 - 이번 모델에서 사용한 데이터 셋은 Kaggle 사이트에 업로드 되어있는 “**Potato Plant Diseases Data”** 이다.
-- 구글 드라이브에 데이터 셋을 업로드 후, 불러오는 식으로 진행하였다.
-    
-    ```python
-    import os
-    
-    # 구글 드라이브 데이터셋 경로
-    dataset_path = "/content/drive/MyDrive/Colab Notebooks/[카카오 부트캠프]/[카카오 부트캠프] 개인과제2 폴더/PlantVillage"
-    
-    # 클래스별 이미지 개수 출력 함수
-    def count_images_per_class(dataset_path):
-        print(f"기준 경로: {dataset_path}\n")
-        for class_name in os.listdir(dataset_path):
-            class_path = os.path.join(dataset_path, class_name)
-            if os.path.isdir(class_path):
-                img_count = len([
-                    f for f in os.listdir(class_path)
-                    if f.lower().endswith(('.jpg', '.jpeg', '.png'))
-                ])
-                print(f"클래스 '{class_name}': {img_count}장")
-    
-    # 실행
-    count_images_per_class(dataset_path)
-    
-    # 클래스별 폴더 확인 (파일이 아닌 폴더만 리스트에 추가)
-    categories = [category for category in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, category))]
-    
-    # 클래스 목록 출력
-    print(f"클래스 개수: {len(categories)}")
-    print(f"클래스 목록: {categories}")
-    
-    # 출력 결과
-    클래스 개수: 3
-    클래스 목록: ['Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy']
-    
-    클래스 'Potato___Early_blight': 1000장
-    클래스 'Potato___Late_blight': 1000장
-    클래스 'Potato___healthy': 152장
-    ```
-    
-- 해당 데이터 셋은
-    - 'Potato___Early_blight'
-    - 'Potato___Late_blight'
-    - 'Potato___healthy'
+- 구글 드라이브에 데이터 셋을 업로드 후, 불러오는 식으로 진행하였다.    
+    - 해당 데이터 셋은
+        - 'Potato___Early_blight'
+        - 'Potato___Late_blight'
+        - 'Potato___healthy'
     
     으로 총 3개 클래스 이며, 각각 1000장 그리고 152장으로 구성 되어있다.
-    
 - 데이터양이 매우 적은 편이므로 **데이터 증강** 및 **데이터 분할**을 train : val : test = 8:1:1로 구성하여 train 학습에 좀더 집중하였다.
-    
-    ```python
-    import os
-    import torch
-    from torchvision import transforms, datasets
-    from torch.utils.data import DataLoader
-    
-    # 데이터셋 경로 설정
-    DATASET_PATH = "/content/drive/MyDrive/Colab Notebooks/[카카오 부트캠프]/[카카오 부트캠프] 개인과제2 폴더/Split_PlantVillage(8:1:1)"
-    
-    # 훈련 데이터에 데이터 증강 추가
-    train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(224),  # 중심 크롭 후 224x224 변환
-        transforms.RandomHorizontalFlip(),  # 좌우 반전
-        transforms.RandomRotation(15),  # 15도 이내 랜덤 회전
-        transforms.RandomApply([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)], p=0.5),  # 50% 확률로 색감 변환
-        transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 1.2)),  # 이동, 확대/축소
-        transforms.GaussianBlur(kernel_size=3),  # 블러 효과 추가
-        transforms.ToTensor(), # Tensor로 변환
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    
-    # 검증 & 테스트 데이터는 원본 유지
-    val_test_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    
-    # 데이터셋 로드 (훈련 데이터에는 증강 적용)
-    train_dataset = datasets.ImageFolder(root=os.path.join(DATASET_PATH, "train"), transform=train_transform)
-    val_dataset = datasets.ImageFolder(root=os.path.join(DATASET_PATH, "val"), transform=val_test_transform)
-    test_dataset = datasets.ImageFolder(root=os.path.join(DATASET_PATH, "test"), transform=val_test_transform)
-    
-    # 데이터 로더 생성
-    BATCH_SIZE = 32
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)  # 🔥 훈련 데이터는 섞음
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)  # 검증 데이터는 유지
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)  # 테스트 데이터도 유지
-    
-    # 데이터셋 개수 확인
-    print(f"훈련 데이터 개수: {len(train_dataset)}")
-    print(f"검증 데이터 개수: {len(val_dataset)}")
-    print(f"테스트 데이터 개수: {len(test_dataset)}")
-    
-    # 출력 결과
-    훈련 데이터 개수: 2064
-    검증 데이터 개수: 409
-    테스트 데이터 개수: 408
-    ```
-    
 
 ## 3. 모델 설명
 
@@ -124,163 +33,11 @@
 - 이번 프로젝트에서 감자 식물 역병 데이터셋을 학습시키기위해 훈련한 모델은 총 5가지 모델로 ResNet50, ResNet18,  VGG16, MobileNet, GoogLeNet 등을 사용했다.
     - ResNet50
     - 조기중단(early stopping)을 적용한 모델학습 함수
-        
-        ```python
-        import os
-        import numpy as np
-        import torch
-        
-        best_model_path = "/content/drive/MyDrive/Colab Notebooks/[카카오 부트캠프]/[카카오 부트캠프] 개인과제2 폴더/ ResNet50_Best_Model(8:1:1).pth"
-        
-        # 얼리 스탑 설정
-        patience = 5  # 5 에포크 동안 개선이 없으면 중단
-        min_delta = 0.001  # 개선이 min_delta 이하이면 의미 없는 개선으로 간주
-        best_val_loss = np.inf  # 처음에는 무한대로 설정
-        counter = 0  # 개선되지 않은 횟수 카운트
-        
-        EPOCHS = 50  # 최대 50 에포크까지 학습
-        
-        train_losses = []
-        val_losses = []
-        train_accuracies = []
-        val_accuracies = []
-        
-        # 모델 평가 함수
-        def evaluate(model, dataloader):
-            model.eval()  # 평가 모드로 변경
-            correct = 0
-            total = 0
-            running_loss = 0.0
-        
-            with torch.no_grad():  # 그래디언트 계산 비활성화 (속도 최적화)
-                for images, labels in dataloader:
-                    images, labels = images.to(device), labels.to(device)
-                    outputs = model(images)
-                    loss = criterion(outputs, labels)
-                    running_loss += loss.item()
-        
-                    _, predicted = torch.max(outputs, 1)
-                    total += labels.size(0)
-                    correct += (predicted == labels).sum().item()
-        
-            avg_loss = running_loss / len(dataloader)
-            accuracy = correct / total * 100
-            return avg_loss, accuracy
-        
-        for epoch in range(EPOCHS):
-            model.train()
-            running_loss = 0.0
-            correct = 0
-            total = 0
-        
-            for images, labels in train_loader:
-                images, labels = images.to(device), labels.to(device)
-        
-                optimizer.zero_grad()
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-        
-                _, predicted = torch.max(outputs, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-                running_loss += loss.item()
-        
-            # 학습 손실 및 정확도 계산
-            train_loss = running_loss / len(train_loader)
-            train_acc = correct / total * 100
-            train_losses.append(train_loss)
-            train_accuracies.append(train_acc)
-        
-            # 검증 손실 및 정확도 계산
-            val_loss, val_acc = evaluate(model, val_loader)
-            val_losses.append(val_loss)
-            val_accuracies.append(val_acc)
-        
-            # 현재 학습률 확인
-            current_lr = optimizer.param_groups[0]['lr']
-        
-            # 로그 출력
-            print(f"\n Epoch [{epoch+1}/{EPOCHS}]")
-            print(f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}%")
-            print(f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}%")
-            print(f"Learning Rate: {current_lr:.6f}")
-        
-            # 얼리 스탑 확인
-            if val_loss < best_val_loss - min_delta:
-                best_val_loss = val_loss
-                counter = 0
-                torch.save(model.state_dict(), best_model_path)
-                print(f"성능 향상! 모델 저장됨: {best_model_path}")
-            else:
-                counter += 1
-                print(f"개선 없음 (Counter: {counter}/{patience})")
-        
-            # 얼리 스탑 조건 충족 시 학습 중단
-            if counter >= patience:
-                print(f"\n얼리 스탑 발생! {epoch+1} 에포크에서 학습 종료")
-                break
-        
-            # 학습률 스케줄러 업데이트
-            scheduler.step()
-        ```
-        
-    
-    ![ResNet50 모델 학습 시각화](attachment:e0fa896d-56ce-4661-af1b-7295c8ddb970:image.png)
-    
-    ResNet50 모델 학습 시각화
-    
-    ```python
-    import matplotlib.pyplot as plt
-    
-    # 모델 평가 함수
-    def evaluate(model, dataloader):
-        model.eval()  # 평가 모드
-        correct = 0
-        total = 0
-        running_loss = 0.0
-    
-        with torch.no_grad():  # 그래디언트 계산 X (속도 최적화)
-            for images, labels in dataloader:
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-                running_loss += loss.item()
-    
-                _, predicted = torch.max(outputs, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-    
-        avg_loss = running_loss / len(dataloader)
-        accuracy = correct / total * 100
-        return avg_loss, accuracy
-    
-    # 최종 테스트 데이터 평가
-    test_loss, test_acc = evaluate(model, test_loader)
-    
-    print(f"Test Loss: {test_loss:.4f}")
-    print(f"Test Accuracy: {test_acc:.2f}%")
-    
-    # 결과 
-    Test Loss: 0.1191
-    Test Accuracy: 97.79%
-    ```
-    
+  
     - 역시나 `ResNet50` 모델은 매우 높은 성능을 보여주었다.
-        
-        → ImageNet 대규모 데이터셋에서 사전학습된 가중치를 사용이 큰 이유이다.
+   → ImageNet 대규모 데이터셋에서 사전학습된 가중치를 사용이 큰 이유이다.
         
     - 추가로 **경량화**를 염두하여 `ResNet18` 모델과 여러 모델들을 함께 모델학습을 진행하였다.
-        
-        ![왼쪽부터 차례대로 VGG16, MobileNet, GoogLeNet, ResNet18 모델](attachment:bf982158-3d06-4aa5-9c97-b5c24495fb5a:각_모델별_그래프(vgg16_mobilenetgooglenetresnet18).png)
-        
-        왼쪽부터 차례대로 VGG16, MobileNet, GoogLeNet, ResNet18 모델
-        
-    
-    ![ VGG16, MobileNet, GoogLeNet, ResNet18 모델의 각 Train, Val, Test 정확도](attachment:43ea6f17-8cdb-4277-9469-bd8c4e4044aa:각_모델_test_acc.png)
-    
-     VGG16, MobileNet, GoogLeNet, ResNet18 모델의 각 Train, Val, Test 정확도
     
 - ResNet50&18, VGG16 그리고 MobileNet 모델을 사용결과 사전학습된 모델이다 보니 성능이 매우 좋은 방면, 상대적으로 학습성능이 떨어진 **GoogLeNet 모델을 점차 강화학습을 진행**하는 방향으로 진행하였다.
 - GoogLeNet 모델의 특징
@@ -415,97 +172,104 @@ def get_finetuned_googlenet(num_classes, use_aux=True, freeze_base=False): #use_
 
     # 보조 분류기도 교체 (aux_logits=True일 때만)
     if use_aux:
-        model.aux1.fc2 = nn.Linear(model.aux1.fc2.in_features, num_classes)
-        model.aux2.fc2 = nn.Linear(model.aux2.fc2.in_features, num_classes)
+        model.aux1.fc2 = nn.Linear(model.aux1.fc2.in_f# mac.lee-AI_Personal_Project
 
-    # 백본 freeze (선택 시)
-    if freeze_base:
-        for name, param in model.named_parameters():
-            if "fc" not in name and "aux" not in name:
-                param.requires_grad = False
+---
+# Using Potato Plant Diseases Data to Build CNN Modeling Comparison
+[Date : 2025.03]
 
-    return model
-```
+---
 
-- aux1,aux2 를 출력 레이서 클래스 수 `num_classes` 에 맞춰 재정의 하였음
-- **`freeze_base=False`** 덕분에 실제로는 이미 전체 파라미터가 `requires_grad=True`인 상태임
+## 1. 서론
+
+---
+
+- 감자는 세계 주요 식량 작물 중 하나로, 특히 **역병(Late Blight, Phytophthora infestans)** 은 감자 생산량에 치명적인 영향을 미치는 대표적인 병해입니다. 특히 초기 역병과 후기 역병은 완전히 다른 질병이며 **초기 역병**은 잎의 작은 반점이나 모서리 변색 등으로 시작되어, 빠른 시간 내에 줄기 및 뿌리까지 전파된다. **후기 역병**은 이미 병이 확산된 상태에서 급격한 조직 괴사와 작물 고사 현상을 유발한다. 이 둘은 방제 시기 및 약제 선택이 다르기 때문에 **정확한 구분이 필수적이다**. 따라서 본 연구는 **감자의 초기 및 후기 역병 발생 시기의 정확한 분류 및 예측 모델**을 구축함으로써, 조기 방제 및 농가 생산성 향상에 기여하고자 한다.
+
+## 2. 데이터셋 설명
+
+---
+
+- 이번 모델에서 사용한 데이터 셋은 Kaggle 사이트에 업로드 되어있는 “**Potato Plant Diseases Data”** 이다.
+- 구글 드라이브에 데이터 셋을 업로드 후, 불러오는 식으로 진행하였다.    
+    - 해당 데이터 셋은
+        - 'Potato___Early_blight'
+        - 'Potato___Late_blight'
+        - 'Potato___healthy'
     
-    → 아무 것도 얼리지(freeze) 않았기 때문에, 전체 파라미터가 기본적으로 학습 대상이 된다는 뜻
+    으로 총 3개 클래스 이며, 각각 1000장 그리고 152장으로 구성 되어있다.
+- 데이터양이 매우 적은 편이므로 **데이터 증강** 및 **데이터 분할**을 train : val : test = 8:1:1로 구성하여 train 학습에 좀더 집중하였다.
+
+## 3. 모델 설명
+
+---
+
+- 이번 프로젝트에서 감자 식물 역병 데이터셋을 학습시키기위해 훈련한 모델은 총 5가지 모델로 ResNet50, ResNet18,  VGG16, MobileNet, GoogLeNet 등을 사용했다.
+    - ResNet50
+    - 조기중단(early stopping)을 적용한 모델학습 함수
+  
+    - 역시나 `ResNet50` 모델은 매우 높은 성능을 보여주었다.
+   → ImageNet 대규모 데이터셋에서 사전학습된 가중치를 사용이 큰 이유이다.
+        
+    - 추가로 **경량화**를 염두하여 `ResNet18` 모델과 여러 모델들을 함께 모델학습을 진행하였다.
     
-- 따라서 위 코드 함수는 유연하게 **전체 파인튜닝**도, **Gradual Unfreeze** 초기도 모두 커버할 수 있는 구조
+- ResNet50&18, VGG16 그리고 MobileNet 모델을 사용결과 사전학습된 모델이다 보니 성능이 매우 좋은 방면, 상대적으로 학습성능이 떨어진 **GoogLeNet 모델을 점차 강화학습을 진행**하는 방향으로 진행하였다.
+- GoogLeNet 모델의 특징
+    1. **`Auxiliary Classifiers (보조 분류기)`가 중간 레이어에 존재**
+        - 학습 시 보조 손실로만 사용되며 **보조 분류기로 인한 기울기 소실 완화**
+        - **학습 속도 및 안전성 향상 기대**
+    2. **작은 모델 크기**로도 성능이 우수해서 **리소스가 제한된 환경**에 적합
+    3. 학습 안정성을 위해 보조 분류기를 쓰는 점이 **소규모 데이터셋 학습에도 유리**
+        
+        ![GoogLeNet 모델 구조 요약 그림](attachment:a06a8a56-48bf-43a7-b17d-ac5d1e399829:image.png)
+        
+        GoogLeNet 모델 구조 요약 그림
+        
+
+## 4. 실험 방법
+
+---
+
+### **GoogLeNet 모델 기반 점진적 성능 개선 전략**
+
+- 기존 일반 GoogLeNet 모델에서의 성능이 낮은 이유는 다음과 같다.
+    1. 보조 분류기(aux) 비활성화 : `aux_logit=False`
+    2. `CrossEntropyLoss` 사용
     
     ```python
-    # Fine-tuning 1차 (전체 fine-tuning + 보조 분류기 포함)
-    finetuned_googlenet = get_finetuned_googlenet(NUM_CLASSES, use_aux=True, freeze_base=False)
+    	from torchvision import models
+    import torch.nn as nn
     
-    # 학습 실행
-    googlenet_result = train_with_early_stopping(
-        model=finetuned_googlenet,
-        model_name="googlenet_finetuned",
-        train_loader=train_loader,
-        val_loader=val_loader,
-        num_epochs=50,
-        patience=5
-    )
+    googlenet = models.googlenet(pretrained=True, aux_logits=False)
+    googlenet.fc = nn.Linear(googlenet.fc.in_features, NUM_CLASSES)
     ```
     
-
-### 2. 2차 파인튜닝 `(use_aux=True, freeze_base=True)`
-
-```python
-# Fine-tuning 2차 (Feature Extractor & Gradual Unfreeze 방식 한번에)
-
-# Feature Extractor 방식
-model_fe = get_finetuned_googlenet(NUM_CLASSES, use_aux=True, freeze_base=True)
-result_fe = train_with_early_stopping(
-    model_fe,
-    model_name="googlenet_feature_extractor",
-    train_loader=train_loader,
-    val_loader=val_loader,
-    gradual_unfreeze=False  
-)
-
-# Gradual Unfreeze 방식
-model_gu = get_finetuned_googlenet(NUM_CLASSES, use_aux=True, freeze_base=True)
-result_gu = train_with_early_stopping(
-    model_gu,
-    model_name="googlenet_gradual_unfreeze",
-    train_loader=train_loader,
-    val_loader=val_loader,
-    gradual_unfreeze=True, 
-    unfreeze_at=5
-)
-```
-
-- 한번에 두 모델 생성하여 두 전략을 동시에 진행하였다.
-    - **Feature Extractor 방식**
-        - **백본(Conv Layer)은 고정(freeze)** → `requires_grad = False`
-        - **분류기(FC + aux1, aux2)만 학습**
-        - 즉, **기존 pretrained weight는 그대로 유지**하면서 새로운 task에 맞는 **출력 레이어만 학습**
-    - **Gradual Unfreeze**(점진적 파라미터 해제) **방식**
-        - **처음에는 Feature Extractor와 동일** → `freeze_base=True`
-        - **지정된 epoch 이후**, 백본도 requires_grad=True로 변경 → 전체 파인튜닝 전환
-        - 학습이 **안정화된 후 백본을 조금씩 푸는 전략**
-    - 각 모델 학습 후 csv파일로 저장하였다.
-        
-        ```python
-        # 드라이브 내 저장 경로
-        CSV_SAVE_DIR = "/content/drive/MyDrive/Colab Notebooks/[카카오 부트캠프]/[카카오 부트캠프] 개인과제2 폴더"
-        os.makedirs(CSV_SAVE_DIR, exist_ok=True)
-        
-        def save_result_to_csv_if_not_exists(result_dict, filename, save_dir):
-            path = os.path.join(save_dir, filename)
-            if os.path.exists(path):
-                print(f"⏩ 이미 존재함: {path} → 저장 생략")
-                return
-            df = pd.DataFrame({
-                "Epoch": list(range(1, len(result_dict["train_loss"]) + 1)),
-                "Train Loss": result_dict["train_loss"],
-                "Val Loss": result_dict["val_loss"],
-                "Train Acc": result_dict["train_acc"],
-                "Val Acc": result_dict["val_acc"],
-            })
-            df.to_csv(path, index=False)
+- 따라서 보조분류기(aux) 활성화 및 파인튜닝을 진행하였다.
+- 조기중단(early stopping)을 적용한 해당 트레이닝 함수를 설정하여 진행하였다.
+    
+    ```python
+    # 얼리 스탑 학습 함수
+    def train_with_early_stopping(model, model_name, train_loader, val_loader, num_epochs=50, patience=5, min_delta=0.001):
+        model.to(device)
+    
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=1e-4)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    
+        best_val_loss = np.inf
+        counter = 0
+        train_losses, val_losses = [], []
+        train_accs, val_accs = [], []
+    
+        save_path = os.path.join(SAVE_DIR, f"{model_name}_best.pth")
+    
+        for epoch in range(num_epochs):
+            model.train()
+            running_loss = 0.0
+            correct = 0
+            total = 0
+    
+csv(path, index=False)
             print(f"✅ 저장 완료: {path}")
         
         save_result_to_csv_if_not_exists(googlenet_result, "googlenet_finetuned_result.csv", CSV_SAVE_DIR)
