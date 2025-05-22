@@ -1,4 +1,3 @@
-# mac.lee-AI_Personal_Project
 # Using Potato Plant Diseases Data to Build CNN Modeling Comparison
 [Date : 2025.03]
 
